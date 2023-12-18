@@ -4,6 +4,7 @@ from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from db import stores
 
+from schemas import StoreSchema
 
 blp = Blueprint("Stores", __name__, description="Operations on Stores")
 
@@ -27,20 +28,26 @@ class Store(MethodView):
 
 @blp.route("/store")
 class StoreList(MethodView):
+    @blp.response(200, StoreSchema(many=True))
     def get(self):
         try:
-            return {"stores": list(stores.values())}
+            return stores.values()
+            #return {"stores": list(stores.values())} . Not used due to marshmallow validation approach
         except KeyError:
             abort(404, message="Stores not found.")
             
-            
-    def post(self):
-        store_data = request.get_json()
-        if "name" not in store_data:
-            abort(
-                400,
-                message=" Bad request. Ensure 'name' is included in the JSON payload."
-            )
+
+    @blp.arguments(StoreSchema)
+    @blp.response(200, StoreSchema)        
+    def post(self, store_data):
+        ############### 
+        ## The commented lines below are no longer needed due to use of marshmallow for validation                
+        #store_data = request.get_json()
+        #if "name" not in store_data:
+        #    abort(
+        #        400,
+        #        message=" Bad request. Ensure 'name' is included in the JSON payload."
+        #    )
         for store in stores.values():
             if store_data["name"] == store["name"]:
                 abort(400, message=f"Store already exists.")
